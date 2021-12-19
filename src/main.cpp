@@ -37,6 +37,15 @@ rotariesdef rotaries[NUMROTARIES] {
   {3,4,18,19,0}, //rotary 2
 };
 
+//each line controls an encoder button
+// {button_pin, last_state}
+int rotary_buttons[NUMROTARIES] = {
+  1,
+  5
+};
+
+int lastRotaryButtonState[2] = {0, 0};
+
 #define DIR_CCW 0x10
 #define DIR_CW 0x20
 #define R_START 0x0
@@ -97,7 +106,7 @@ Keypad buttbx = Keypad(makeKeymap(buttons), rowPins, colPins, NUMROWS, NUMCOLS);
 //JOYSTICK SETTINGS
 Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,
   JOYSTICK_TYPE_JOYSTICK,
-  20, //number of buttons
+  NUMBUTTONS, //number of buttons
   0, //number of hat switches
   //Set as many axis to "true" as you have potentiometers for
   false, // y axis
@@ -114,9 +123,9 @@ Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,
 
 const int numReadings = 20;
  
-int readings[numReadings];      // the readings from the analog input
+int readings[numReadings];  // the readings from the analog input
 int index = 0;              // the index of the current reading
-int total = 0;                  // the running total
+int total = 0;              // the running total
 int currentOutputLevel = 0;
 
 //POTENTIOMETERS PART 1
@@ -177,30 +186,39 @@ void CheckAllPotentiometers(){
 
 
 void CheckAllButtons(void) {
-      if (buttbx.getKeys())
+  if (buttbx.getKeys())
+  {
+    for (int i=0; i<LIST_MAX; i++)   
     {
-       for (int i=0; i<LIST_MAX; i++)   
-        {
-           if ( buttbx.key[i].stateChanged )   
-            {
-            switch (buttbx.key[i].kstate) { 
-                    case PRESSED:
-                    case HOLD:
-                              Joystick.setButton(buttbx.key[i].kchar, 1);
-                              break;
-                    case RELEASED:
-                    case IDLE:
-                              Joystick.setButton(buttbx.key[i].kchar, 0);
-                              break;
-            }
-           }   
-         }
-     }
+      if ( buttbx.key[i].stateChanged )   
+      {
+        switch (buttbx.key[i].kstate) { 
+          case PRESSED:
+          case HOLD:
+            Joystick.setButton(buttbx.key[i].kchar, 1);
+            break;
+          case RELEASED:
+          case IDLE:
+            Joystick.setButton(buttbx.key[i].kchar, 0);
+            break;
+        }
+      }   
+    }
+  }
+  for (int index = 0; index < NUMROTARIES; index++)
+  {
+    int currentButtonState = !digitalRead(rotary_buttons[index]);
+    if (currentButtonState != lastRotaryButtonState[index])
+    {
+      Joystick.setButton(index + 20, currentButtonState);
+      lastRotaryButtonState[index] = currentButtonState;
+    }
+  }
 }
 
 
 void rotary_init() {
-  for (int i=0;i<NUMROTARIES;i++) {
+  for (int i=0; i<NUMROTARIES; i++) {
     pinMode(rotaries[i].pin1, INPUT);
     pinMode(rotaries[i].pin2, INPUT);
     #ifdef ENABLE_PULLUPS
@@ -221,19 +239,23 @@ unsigned char rotary_process(int _i) {
 
 void CheckAllEncoders(void) {
   //Serial.println("Checking rotaries");
-  for (int i=0;i<NUMROTARIES;i++) {
+  for (int i=0; i<NUMROTARIES; i++) {
     unsigned char result = rotary_process(i);
     if (result == DIR_CCW) {
       Serial.print("Rotary ");
       Serial.print(i);
       Serial.println(" <<< Going CCW");
-      Joystick.setButton(rotaries[i].ccwchar, 1); delay(50); Joystick.setButton(rotaries[i].ccwchar, 0);
+      Joystick.setButton(rotaries[i].ccwchar, 1);
+      delay(50);
+      Joystick.setButton(rotaries[i].ccwchar, 0);
     };
     if (result == DIR_CW) {
       Serial.print("Rotary ");
       Serial.print(i);
       Serial.println(" >>> Going CW");
-      Joystick.setButton(rotaries[i].cwchar, 1); delay(50); Joystick.setButton(rotaries[i].cwchar, 0);
+      Joystick.setButton(rotaries[i].cwchar, 1);
+      delay(50);
+      Joystick.setButton(rotaries[i].cwchar, 0);
     };
   }
   //Serial.println("Done checking");
@@ -246,13 +268,14 @@ void setup() {
   for (int thisReading = 0; thisReading < numReadings; thisReading++) {
     readings[thisReading] = 0;
   }
+  for (int i=0; i<NUMROTARIES; i++){
+    pinMode(rotary_buttons[i], INPUT_PULLUP);
+  }
 }
 
 void loop() {
-
   CheckAllEncoders();
   CheckAllButtons();
   CheckAllPotentiometers();
-  
 }
 
