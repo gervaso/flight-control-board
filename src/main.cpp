@@ -4,9 +4,10 @@
 //DEFINITIONS
 #define ENABLE_PULLUPS
 #define NUMROTARIES 2 //replace "?" with number of rotary encoders you are using
-#define NUMBUTTONS 20 //replace "?"with number of buttong you are using
+#define NUMBUTTONS 22 //replace "?"with number of buttong you are using
 #define NUMROWS 4 //replace "?" with number of rows you have
 #define NUMCOLS 4 //replace "?" with number of columns you have
+#define HALF_STEP //half step rotary hardware
 
 //BUTTON MATRIX
 //first change number of rows and columns to match your button matrix, 
@@ -39,6 +40,7 @@ rotariesdef rotaries[NUMROTARIES] {
 #define DIR_CCW 0x10
 #define DIR_CW 0x20
 #define R_START 0x0
+
 
 #ifdef HALF_STEP
 #define R_CCW_BEGIN 0x1
